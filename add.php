@@ -1,5 +1,6 @@
 <?php
 require('db.inc.php');
+$levels = getGeoLevels();
 
 $name = "";
 $description = "";
@@ -7,31 +8,111 @@ $hint = "";
 $level = 1;
 $latitude = 0;
 $longitude = 0;
+$errors = [];
 
 if (isset($_POST['formSubmit'])) {
 
-    $name = $_POST['inputName'];
+    // validation for name
+    if (!isset($_POST['inputName'])) {
+        $errors[] = "Name is required";
+    } else {
+        $name = $_POST['inputName'];
 
-    $description = $_POST['inputDescription'];
+        // check if name is no longer than 255 characters
+        if (strlen($name) == 0) {
+            $errors[] = "Name is required";
+        }
 
-    $hint = $_POST['inputHint'];
+        // check if name is alfanumeric
+        if (!preg_match("/^[a-zA-Z0-9 ]*$/", $name)) {
+            $errors[] = "Name must be alphanumeric";
+        }
 
-    $level = $_POST['inputLevel'];
+        // check if name is no longer than 255 characters
+        if (strlen($name) > 255) {
+            $errors[] = "Name must be no longer than 255 characters";
+        }
+    }
 
-    $latitude = $_POST['inputLatitude'];
+    // validation for description (optional)
+    if (isset($_POST['inputDescription'])) {
+        $description = $_POST['inputDescription'];
+    }
 
-    $longitude = $_POST['inputLongitude'];
+    // validation for hint (optional)
+    if (isset($_POST['inputHint'])) {
+        $hint = $_POST['inputHint'];
 
-    $success = insertGeocache(
-        $name,
-        $description,
-        $hint,
-        $level,
-        $latitude,
-        $longitude
-    );
+        // check if hint is alfanumeric
+        if (!preg_match("/^[a-zA-Z0-9 ]*$/", $hint)) {
+            $errors[] = "Name must be alphanumeric";
+        }
+
+        // check if name is no longer than 255 characters
+        if (strlen($hint) > 255) {
+            $errors[] = "Hint must be no longer than 255 characters";
+        }
+    }
+
+
+    // validation for level
+    if (!isset($_POST['inputLevel'])) {
+        $errors[] = "Level is required";
+    } else {
+        if (!isset($levels[$_POST['inputLevel']])) {
+            $errors[] = "Level is not valid";
+        } else {
+            $level = $_POST['inputLevel'];
+        }
+    }
+
+
+    // validation for latitude
+    if (!isset($_POST['inputLatitude'])) {
+        $errors[] = "Latitude is required";
+    } else {
+        $latitude = (float) (str_replace(',', '.', $_POST['inputLatitude']));
+        // check if latitude is a valid absolute or floating value between 0 and 90
+        if ($latitude < -90 || $latitude > 90) {
+            $errors[] = "Latitude value is not valid, should be between -90 and 90";
+        }
+    }
+
+
+    // validation for longitude
+    if (!isset($_POST['inputLongitude'])) {
+        $errors[] = "Longitude is required";
+    } else {
+        $longitude = (float) (str_replace(',', '.', $_POST['inputLongitude']));
+        // check if latitude is a valid absolute or floating value between 0 and 90
+        if ($longitude < -180 || $longitude > 180) {
+            $errors[] = "Longitude value is not valid, should be between -180 and 180";
+        }
+    }
+
+    if (!count($errors)) {
+        // insert into db
+
+        $success = insertGeocache(
+            $name,
+            $description,
+            $hint,
+            $level,
+            $latitude,
+            $longitude
+        );
+
+        if (!$success) {
+            $errors[] = "Geocache could not be added, something went wrong...";
+        } else {
+            // add success message to session and redirect to homepage
+            session_start();
+            $_SESSION['successMessage'] = "Geocache <strong>$name</strong> added successfully.";
+            header("Location: index.php");
+            exit;
+        }
+    }
 }
-
 ?>
 <!doctype html>
 <html lang="en">
@@ -52,64 +133,51 @@ if (isset($_POST['formSubmit'])) {
             <h2>Add new geocache</h2>
             <hr />
 
-            <div class="alert alert-danger" role="alert">
-                <ul>
-                    <li>Error message 1</li>
-                    <li>Error message 2</li>
-                    <li>...</li>
-                </ul>
-            </div>
+            <?php if (count($errors)) : ?>
+                <div class="alert alert-danger" role="alert">
+                    <ul>
+                        <?php foreach ($errors as $error) : ?>
+                            <li><?= $error; ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
 
             <form method="post" action="add.php">
 
                 <div class="form-group mt-3">
                     <label for="inputName" class="col-sm-2 col-form-label">Name: *</label>
                     <div>
-                        <input type="text" class="form-control" id="inputName" name="inputName" placeholder="Name">
+                        <input type="text" class="form-control" id="inputName" name="inputName" placeholder="Name" value="<?= $name; ?>">
                     </div>
                 </div>
 
                 <div class="form-group mt-3">
                     <label for="inputDescription" class="col-sm-2 col-form-label">Description:</label>
                     <div>
-                        <textarea name="inputDescription" id="inputDescription" style="width: 100%"></textarea>
+                        <textarea name="inputDescription" id="inputDescription" style="width: 100%"><?= $description; ?></textarea>
                     </div>
                 </div>
 
                 <div class="form-group mt-3">
                     <label for="inputHint" class="col-sm-2 col-form-label">Hint:</label>
                     <div>
-                        <input type="text" class="form-control" id="inputHint" name="inputHint" placeholder="Hint">
+                        <input type="text" class="form-control" id="inputHint" name="inputHint" placeholder="Hint" value="<?= $hint; ?>">
                     </div>
                 </div>
 
                 <div class="form-group mt-3">
                     <label for="inputLevel" class="col-sm-2 col-form-label">Level: *</label>
                     <div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="inputLevel" id="inputLevel1" value="1" checked>
-                            <label class="form-check-label" for="inputLevel1">
-                                Easy
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="inputLevel" id="inputLevel2" value="4">
-                            <label class="form-check-label" for="inputLevel2">
-                                Medium
-                            </label>
-                        </div>
-                        <div class="form-check disabled">
-                            <input class="form-check-input" type="radio" name="inputLevel" id="inputLevel3" value="2">
-                            <label class="form-check-label" for="inputLevel3">
-                                Hard
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="inputLevel" id="inputLevel2" value="3">
-                            <label class="form-check-label" for="inputLevel2">
-                                Impossible
-                            </label>
-                        </div>
+                        <?php foreach ($levels as $levelId => $levelName) : ?>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="inputLevel" id="inputLevel<?= $levelId; ?>" value="<?= $levelId; ?>" <?= ($levelId == $level) ? 'checked' : ''; ?>>
+                                <label class="form-check-label" for="inputLevel<?= $levelId; ?>"><?= $levelName; ?></label>
+                            </div>
+
+                        <?php endforeach; ?>
+
                     </div>
 
                 </div>
@@ -117,14 +185,14 @@ if (isset($_POST['formSubmit'])) {
                 <div class="form-group mt-3">
                     <label for="inputLatitude" class="col-sm-2 col-form-label">latitude: *</label>
                     <div>
-                        <input type="text" class="form-control" id="inputLatitude" name="inputLatitude" placeholder="Latitude">
+                        <input type="text" class="form-control" id="inputLatitude" name="inputLatitude" placeholder="Latitude" value="<?= $latitude; ?>">
                     </div>
                 </div>
 
                 <div class="form-group mt-3">
                     <label for="inputLongitude" class="col-sm-2 col-form-label">Longitude: *</label>
                     <div>
-                        <input type="text" class="form-control" id="inputLongitude" name="inputLongitude" placeholder="Longitude">
+                        <input type="text" class="form-control" id="inputLongitude" name="inputLongitude" placeholder="Longitude" value="<?= $longitude; ?>">
                     </div>
                 </div>
 

@@ -1,7 +1,21 @@
 <?php
 require('db.inc.php');
 
-$items = getGeoCaches();
+$levels = getGeoLevels();
+$filter = (int)@$_GET['filter'];
+
+if (array_key_exists($filter, $levels)) {
+    $items = getGeoCaches($filter);
+} else {
+    $items = getGeoCaches();
+}
+
+$message  = NULL;
+session_start();
+if (isset($_SESSION['successMessage'])) {
+    $message = $_SESSION['successMessage'];
+    unset($_SESSION['successMessage']);
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -21,10 +35,12 @@ $items = getGeoCaches();
         <main>
             <h2>Geocaches</h2>
 
+            <?php if ($message): ?>
+                <div id="#custom-message" class="p-3 text-success-emphasis bg-success-subtle border border-success-subtle rounded-3 mt-3">
+                    <?= $message; ?>
+                </div>
+            <?php endif; ?>
 
-            <div id="#custom-message" class="p-3 text-success-emphasis bg-success-subtle border border-success-subtle rounded-3 mt-3">
-                New geocache <strong><i>{geocache title}</i></strong> successfully added!
-            </div>
 
             <div class="mt-3 mb-3 text-end">
                 <a href="add.php">
@@ -47,16 +63,41 @@ $items = getGeoCaches();
 
                         <?php foreach ($items as $item): ?>
 
+                            <?php
+
+                            switch ($item['level_id']) {
+                                case 1:
+                                    $pillClass = 'bg-success';
+                                    break;
+                                case 2:
+                                    $pillClass = 'bg-danger';
+                                    break;
+                                case 3:
+                                    $pillClass = 'bg-dark';
+                                    break;
+                                case 4:
+                                    $pillClass = 'bg-warning';
+                                    break;
+                                default:
+                                    $pillClass = 'bg-secondary';
+                                    break;
+                            }
+
+                            ?>
+
+
                             <tr>
                                 <td><?= $item['id']; ?></td>
                                 <td><?= $item['name']; ?></td>
                                 <td>
-                                    <a href="#">
-                                        <?= $item['level_name']; ?>
+                                    <a href="?filter=<?= $item['level_id']; ?>">
+                                        <span class="badge rounded-pill <?= $pillClass ?>">
+                                            <?= $item['level_name'] ? $item['level_name'] : '- unknown -'; ?>
+                                        </span>
                                     </a>
                                 </td>
                                 <td>
-                                    <a href="detail.php">
+                                    <a href="detail.php?id=<?= $item['id']; ?>">
                                         <button type="button" class="btn btn-outline-secondary">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
                                                 <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />

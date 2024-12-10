@@ -1,6 +1,26 @@
 <?php
 require('db.inc.php');
-$item = getGeoCacheById(1);
+
+$id = (int)@$_GET['id'];
+
+if (!$id) {
+    redirect();
+}
+
+$item = getGeoCacheById($id);
+
+if (!$item) {
+    redirect();
+}
+
+function redirect()
+{
+    http_response_code(404);
+    header('Location: index.php');
+    exit;
+}
+
+$levels = getGeoLevels();
 ?>
 <!doctype html>
 <html lang="en">
@@ -38,7 +58,7 @@ $item = getGeoCacheById(1);
 
             <h4>Level</h4>
             <p>
-                <?= $item['level_id']; ?>
+                <?= isset($levels[$item['level_id']]) ? $levels[$item['level_id']] : '- unkown -'; ?>
             </p>
 
             <h4>Description</h4>

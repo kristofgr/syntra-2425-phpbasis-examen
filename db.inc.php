@@ -63,3 +63,13 @@ function insertGeocache(String $name, String $description, String $hint, int $le
 
     return $db->lastInsertId();
 }
+
+
+function getGeoLevels($order = 'weight'): array
+{
+    $sql = "SELECT id, name FROM geolevels ORDER BY $order";
+
+    $stmt = connectToDB()->prepare($sql);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+}
