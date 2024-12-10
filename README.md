@@ -10,7 +10,7 @@ Je hoeft tijdens dit examen niets aan te passen aan de database-structuur.
 
 - Overzichtspagina:
 
-  - [1 punt] Zorg dat _level_ in de tabel weergegeven wordt als Bootstrap's Badge Pill (https://getbootstrap.com/docs/4.0/components/badge/#pill-badges) waarbij:
+  - [1 punt] Zorg dat _level_ in de tabel weergegeven wordt als Bootstrap's Badge Pill (https://getbootstrap.com/docs/5.0/components/badge/#pill-badges) waarbij:
     - Easy: groen
     - Medium: geel
     - Hard: rood
